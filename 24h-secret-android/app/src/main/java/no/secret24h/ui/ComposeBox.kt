@@ -31,8 +31,9 @@ fun ComposeBox(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Zinc900, RoundedCornerShape(16.dp))
-            .border(1.dp, Zinc700, RoundedCornerShape(16.dp))
+            .glowBehind(color = DuskGlow, radius = 24.dp, alpha = 0.12f)
+            .border(1.dp, DuskBorder, RoundedCornerShape(20.dp))
+            .background(DuskCardBg, RoundedCornerShape(20.dp))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -41,16 +42,22 @@ fun ComposeBox(
             onValueChange = { if (it.length <= 280) text = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .defaultMinSize(minHeight = 72.dp),
-            textStyle = TextStyle(color = Color(0xFFFAFAFA), fontSize = 15.sp, lineHeight = 22.sp),
-            cursorBrush = SolidColor(VioletLight),
+                .defaultMinSize(minHeight = 80.dp),
+            textStyle = TextStyle(
+                color = DuskText,
+                fontSize = 15.sp,
+                lineHeight = 22.sp,
+                fontFamily = GeistFamily,
+            ),
+            cursorBrush = SolidColor(DuskAccent),
             decorationBox = { inner ->
                 Box {
                     if (text.isEmpty()) {
                         Text(
                             "Del en hemmelighet anonymt... 🤫",
-                            color = Zinc600,
+                            color = DuskMuted,
                             fontSize = 15.sp,
+                            fontFamily = GeistFamily,
                         )
                     }
                     inner()
@@ -58,7 +65,6 @@ fun ComposeBox(
             },
         )
 
-        // Mood chips — FlowRow wrapper automatisk
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -66,16 +72,28 @@ fun ComposeBox(
         ) {
             MOODS.forEach { m ->
                 val selected = m == mood
+                val ec = EMOTION_COLORS[m] ?: EMOTION_COLORS["annet"]!!
                 Surface(
                     onClick = { mood = m },
                     shape = RoundedCornerShape(50),
-                    color = if (selected) VioletLight else Zinc800,
+                    color = Color.Transparent,
+                    modifier = Modifier
+                        .border(
+                            1.dp,
+                            if (selected) ec.glow.copy(alpha = 0.6f) else DuskBorder,
+                            RoundedCornerShape(50),
+                        )
+                        .background(
+                            if (selected) ec.bg else Color.Transparent,
+                            RoundedCornerShape(50),
+                        ),
                 ) {
                     Text(
                         text = "${MOOD_EMOJIS[m]} $m",
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         fontSize = 12.sp,
-                        color = if (selected) Color.White else Color(0xFFA1A1AA),
+                        color = if (selected) ec.fg else DuskMuted,
+                        fontFamily = GeistFamily,
                     )
                 }
             }
@@ -87,23 +105,45 @@ fun ComposeBox(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "$remaining",
-                fontSize = 12.sp,
-                color = if (remaining < 20) Color(0xFFF87171) else Zinc600,
+                text = "🔒 anonym · 24t",
+                fontSize = 11.sp,
+                color = DuskMuted,
+                fontFamily = GeistFamily,
             )
 
-            Button(
-                onClick = {
-                    if (canSubmit) {
-                        onSubmit(text.trim(), mood)
-                        text = ""
-                    }
-                },
-                enabled = canSubmit,
-                colors = ButtonDefaults.buttonColors(containerColor = VioletLight),
-                shape = RoundedCornerShape(12.dp),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(if (isSending) "Sender..." else "Del hemmelighet", fontSize = 13.sp)
+                Text(
+                    "$remaining",
+                    fontSize = 11.sp,
+                    color = if (remaining < 20) Color(0xFFFF6B8A) else DuskMuted,
+                    fontFamily = GeistFamily,
+                )
+                Button(
+                    onClick = {
+                        if (canSubmit) {
+                            onSubmit(text.trim(), mood)
+                            text = ""
+                        }
+                    },
+                    enabled = canSubmit,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DuskGlow,
+                        disabledContainerColor = Color(0xFF2A2040),
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = if (canSubmit) Modifier.glowBehind(DuskGlow, radius = 16.dp, alpha = 0.4f) else Modifier,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    Text(
+                        if (isSending) "Sender..." else "Slipp den fri ✦",
+                        fontSize = 13.sp,
+                        fontFamily = GeistFamily,
+                        color = if (canSubmit) Color.White else DuskMuted,
+                    )
+                }
             }
         }
     }

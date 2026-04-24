@@ -54,6 +54,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.7.8")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

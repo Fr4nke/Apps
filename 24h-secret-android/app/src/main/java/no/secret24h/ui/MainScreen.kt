@@ -1,5 +1,7 @@
 package no.secret24h.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -8,16 +10,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import no.secret24h.data.Secret
 import no.secret24h.data.SecretsViewModel
 import no.secret24h.data.Sort
 
@@ -28,36 +28,42 @@ fun MainScreen(vm: SecretsViewModel = viewModel()) {
     val reactedIds = remember { mutableStateMapOf<String, Set<String>>() }
 
     AppTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = Color(0xFF09090B),
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(Color(0xFF1A1235), DuskBg),
+                        radius = 1200f,
+                    )
+                )
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 // Header
                 item {
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Text(
-                            buildAnnotatedString {
-                                append("🤫 ")
-                                withStyle(SpanStyle(color = Color(0xFFA78BFA), fontWeight = FontWeight.Bold)) {
-                                    append("24h Secret")
-                                }
-                            },
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.Bold,
+                            text = "24h Secret",
+                            fontSize = 32.sp,
+                            fontFamily = InstrumentSerif,
+                            fontStyle = FontStyle.Italic,
+                            color = DuskAccent,
                         )
                         Text(
-                            "Anonym. Ingen konto. Forsvinner etter 24 timer.",
+                            text = "Anonym · Ingen konto · Forsvinner etter 24 timer",
                             fontSize = 12.sp,
-                            color = Zinc600,
+                            color = DuskMuted,
+                            fontFamily = GeistFamily,
                         )
                     }
                 }
@@ -82,7 +88,7 @@ fun MainScreen(vm: SecretsViewModel = viewModel()) {
                             SortTab("Topp 24t ✦", state.sort == Sort.Top) { vm.setSort(Sort.Top) }
                         }
                         if (state.sort == Sort.Top) {
-                            Text("Mest resonert de siste 24t", fontSize = 11.sp, color = Zinc600)
+                            Text("Mest resonert", fontSize = 11.sp, color = DuskMuted, fontFamily = GeistFamily)
                         }
                     }
                 }
@@ -90,15 +96,20 @@ fun MainScreen(vm: SecretsViewModel = viewModel()) {
                 // Error
                 state.error?.let { err ->
                     item {
-                        Text(err, color = Color(0xFFF87171), fontSize = 13.sp)
+                        Text(err, color = Color(0xFFFF6B8A), fontSize = 13.sp, fontFamily = GeistFamily)
                     }
                 }
 
                 // Loading
                 if (state.isLoading) {
                     item {
-                        Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = VioletLight, modifier = Modifier.size(28.dp))
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(color = DuskAccent, modifier = Modifier.size(26.dp), strokeWidth = 2.dp)
                         }
                     }
                 }
@@ -107,12 +118,19 @@ fun MainScreen(vm: SecretsViewModel = viewModel()) {
                 if (!state.isLoading && state.secrets.isEmpty()) {
                     item {
                         Column(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 56.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text("🤫", fontSize = 40.sp)
-                            Text("Ingen hemmeligheter ennå. Del den første!", color = Zinc600, fontSize = 14.sp)
+                            Text(
+                                "Ingen hemmeligheter ennå.",
+                                color = DuskMuted,
+                                fontSize = 14.sp,
+                                fontFamily = GeistFamily,
+                            )
                         }
                     }
                 }
@@ -143,15 +161,26 @@ fun MainScreen(vm: SecretsViewModel = viewModel()) {
 fun SortTab(label: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = if (selected) Zinc700 else Color.Transparent,
+        shape = RoundedCornerShape(10.dp),
+        color = Color.Transparent,
+        modifier = Modifier
+            .border(
+                1.dp,
+                if (selected) DuskAccent.copy(alpha = 0.4f) else DuskBorder,
+                RoundedCornerShape(10.dp),
+            )
+            .background(
+                if (selected) Color(0x1AB69DFF) else Color.Transparent,
+                RoundedCornerShape(10.dp),
+            ),
     ) {
         Text(
             label,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
-            color = if (selected) Color.White else Zinc600,
+            color = if (selected) DuskAccent else DuskMuted,
+            fontFamily = GeistFamily,
         )
     }
 }

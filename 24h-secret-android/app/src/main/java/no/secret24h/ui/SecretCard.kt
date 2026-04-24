@@ -21,14 +21,6 @@ import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 
-val MOOD_COLORS = mapOf(
-    "lettelse" to (Color(0xFF1E3A5F) to Color(0xFF93C5FD)),
-    "skam" to (Color(0xFF4C1D1D) to Color(0xFFFCA5A5)),
-    "stolthet" to (Color(0xFF3D2A00) to Color(0xFFFCD34D)),
-    "anger" to (Color(0xFF431407) to Color(0xFFFDBA74)),
-    "annet" to (Zinc800 to Color(0xFFA1A1AA)),
-)
-
 @Composable
 fun Countdown(expiresAt: String) {
     var timeLeft by remember { mutableStateOf("") }
@@ -51,7 +43,7 @@ fun Countdown(expiresAt: String) {
         }
     }
 
-    Text("⏳ $timeLeft", fontSize = 11.sp, color = Zinc600)
+    Text("⏳ $timeLeft", fontSize = 11.sp, color = DuskMuted, fontFamily = GeistFamily)
 }
 
 @Composable
@@ -62,22 +54,26 @@ fun SecretCard(
     reactedHeart: Boolean,
     onReact: (String) -> Unit,
 ) {
-    val rankColors = mapOf(1 to Color(0xFFEAB308), 2 to Color(0xFF9CA3AF), 3 to Color(0xFFB45309))
+    val rankColors = mapOf(1 to Color(0xFFFFD166), 2 to Color(0xFFB0B0C8), 3 to Color(0xFFCD8847))
+    val emotion = EMOTION_COLORS[secret.mood] ?: EMOTION_COLORS["annet"]!!
 
     Box(modifier = Modifier.fillMaxWidth()) {
-        Card(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = if (rank != null) 8.dp else 0.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Zinc900),
+                .padding(top = if (rank != null) 8.dp else 0.dp)
+                .glowBehind(color = emotion.glow, radius = 18.dp, alpha = 0.18f)
+                .border(1.dp, DuskBorder, RoundedCornerShape(16.dp))
+                .background(DuskCardBg, RoundedCornerShape(16.dp))
+                .padding(16.dp),
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     text = secret.text,
-                    color = Color(0xFFFAFAFA),
+                    color = DuskText,
                     fontSize = 15.sp,
                     lineHeight = 22.sp,
+                    fontFamily = GeistFamily,
                 )
 
                 Row(
@@ -85,16 +81,24 @@ fun SecretCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        val (bg, fg) = MOOD_COLORS[secret.mood] ?: (Zinc800 to Color(0xFFA1A1AA))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         val emoji = MOOD_EMOJIS[secret.mood] ?: "💭"
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
-                                .background(bg)
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                                .background(emotion.bg)
+                                .border(1.dp, emotion.glow.copy(alpha = 0.3f), RoundedCornerShape(50))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
-                            Text("$emoji ${secret.mood}", fontSize = 11.sp, color = fg)
+                            Text(
+                                "$emoji ${secret.mood}",
+                                fontSize = 11.sp,
+                                color = emotion.fg,
+                                fontFamily = GeistFamily,
+                            )
                         }
                         Countdown(secret.expiresAt)
                     }
@@ -105,7 +109,8 @@ fun SecretCard(
                             label = "meg også",
                             count = secret.reactionMeToo,
                             active = reactedMeToo,
-                            activeColor = Color(0xFF4C1D95),
+                            activeColor = Color(0xFF2D1A66),
+                            activeBorder = DuskAccent,
                         ) { onReact("me_too") }
 
                         ReactionButton(
@@ -113,7 +118,8 @@ fun SecretCard(
                             label = "",
                             count = secret.reactionHeart,
                             active = reactedHeart,
-                            activeColor = Color(0xFF500724),
+                            activeColor = Color(0xFF3D0A1A),
+                            activeBorder = Color(0xFFFF6B8A),
                         ) { onReact("heart") }
                     }
                 }
@@ -121,16 +127,22 @@ fun SecretCard(
         }
 
         if (rank != null) {
-            val badgeColor = rankColors[rank] ?: Color.Gray
+            val badgeColor = rankColors[rank] ?: DuskMuted
             Box(
                 modifier = Modifier
                     .offset(x = 8.dp, y = 0.dp)
-                    .size(28.dp)
+                    .size(26.dp)
                     .clip(CircleShape)
                     .background(badgeColor),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("#$rank", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(
+                    "#$rank",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0C0A1A),
+                    fontFamily = GeistFamily,
+                )
             }
         }
     }
@@ -143,26 +155,31 @@ fun ReactionButton(
     count: Int,
     active: Boolean,
     activeColor: Color,
+    activeBorder: Color,
     onClick: () -> Unit,
 ) {
-    val bg = if (active) activeColor else Zinc800
-    val fg = if (active) Color.White else Color(0xFFA1A1AA)
+    val bg = if (active) activeColor else Color(0x1AFFFFFF)
+    val fg = if (active) Color.White else DuskMuted
+    val border = if (active) activeBorder.copy(alpha = 0.5f) else DuskBorder
 
     Surface(
         onClick = onClick,
         enabled = !active,
-        shape = RoundedCornerShape(12.dp),
-        color = bg,
-        modifier = Modifier.height(32.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = Color.Transparent,
+        modifier = Modifier
+            .height(30.dp)
+            .border(1.dp, border, RoundedCornerShape(10.dp))
+            .background(bg, RoundedCornerShape(10.dp)),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp),
+            modifier = Modifier.padding(horizontal = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text(emoji, fontSize = 13.sp)
-            Text("$count", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = fg)
-            if (label.isNotEmpty()) Text(label, fontSize = 11.sp, color = fg)
+            Text(emoji, fontSize = 12.sp)
+            Text("$count", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = fg, fontFamily = GeistFamily)
+            if (label.isNotEmpty()) Text(label, fontSize = 10.sp, color = fg, fontFamily = GeistFamily)
         }
     }
 }
