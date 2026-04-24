@@ -41,15 +41,15 @@ jobs:
         working-directory: 24h-secret-android
         run: gradle assembleDebug
 
+      - name: Get version tag
+        id: version
+        run: echo "tag=v$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Rename APK
         run: |
           mkdir -p release
           cp 24h-secret-android/app/build/outputs/apk/debug/app-debug.apk \
-             release/24h-secret.apk
-
-      - name: Get version tag
-        id: version
-        run: echo "tag=v$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+             "release/24h-secret-${{ steps.version.outputs.tag }}.apk"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -57,5 +57,5 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: "24h Secret ${{ steps.version.outputs.tag }}"
           body: "Automatisk bygget fra main-branch."
-          files: release/24h-secret.apk
+          files: "release/24h-secret-${{ steps.version.outputs.tag }}.apk"
           token: ${{ secrets.GITHUB_TOKEN }}
