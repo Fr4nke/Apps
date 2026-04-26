@@ -41,11 +41,11 @@ fun ComposeBox(
             onValueChange = { if (it.length <= 280) text = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .defaultMinSize(minHeight = 72.dp),
+                .defaultMinSize(minHeight = 56.dp),
             textStyle = TextStyle(
                 color = SmText,
-                fontSize = 15.sp,
-                lineHeight = 22.sp,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
                 fontFamily = GeistFamily,
             ),
             cursorBrush = SolidColor(SmAccent),
@@ -55,7 +55,7 @@ fun ComposeBox(
                         Text(
                             "Skriv din hemmelighet... ingen ser hvem du er.",
                             color = SmTextFaint,
-                            fontSize = 15.sp,
+                            fontSize = 14.sp,
                             fontFamily = GeistFamily,
                         )
                     }
@@ -129,11 +129,11 @@ fun ComposeBox(
                     ),
                     shape = RoundedCornerShape(100.dp),
                     modifier = if (canSubmit) Modifier.glowBehind(SmAccent, radius = 14.dp, cornerRadius = 50.dp, alpha = 0.45f) else Modifier,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                 ) {
                     Text(
                         if (isSending) "Sender..." else "Slipp den fri",
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontFamily = GeistFamily,
                         color = if (canSubmit) Color.White else SmTextFaint,
                     )

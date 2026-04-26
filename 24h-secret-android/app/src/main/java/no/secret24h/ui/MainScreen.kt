@@ -45,7 +45,7 @@ fun MainScreen(vm: SecretsViewModel = viewModel()) {
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 44.dp),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 // Header
@@ -63,14 +63,14 @@ fun MainScreen(vm: SecretsViewModel = viewModel()) {
                                     SpanStyle(
                                         fontFamily = InstrumentSerif,
                                         fontStyle = FontStyle.Italic,
-                                        fontSize = 34.sp,
+                                        fontSize = 26.sp,
                                         color = SmText,
                                     )
                                 ) { append("24h ") }
                                 withStyle(
                                     SpanStyle(
                                         fontFamily = InstrumentSerif,
-                                        fontSize = 34.sp,
+                                        fontSize = 26.sp,
                                         color = SmAccent,
                                     )
                                 ) { append("Secret") }
@@ -197,8 +197,8 @@ fun SortTab(label: String, selected: Boolean, onClick: () -> Unit) {
     ) {
         Text(
             label,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            fontSize = 13.sp,
+            modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
+            fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             color = if (selected) Color.White else SmTextDim,
             fontFamily = GeistFamily,

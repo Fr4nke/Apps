@@ -66,14 +66,14 @@ fun SecretCard(
                 .glowBehind(color = emotion.glow, radius = 16.dp, alpha = 0.15f)
                 .border(1.dp, SmBorder, RoundedCornerShape(16.dp))
                 .background(SmSurface, RoundedCornerShape(16.dp))
-                .padding(14.dp),
+                .padding(12.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     text = secret.text,
                     color = SmText,
-                    fontSize = 16.sp,
-                    lineHeight = 22.sp,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
                     fontFamily = InstrumentSerif,
                 )
 
@@ -143,18 +143,18 @@ fun ReactionButton(
         shape = RoundedCornerShape(100.dp),
         color = Color.Transparent,
         modifier = Modifier
-            .height(28.dp)
+            .height(24.dp)
             .border(1.dp, border, RoundedCornerShape(100.dp))
             .background(bg, RoundedCornerShape(100.dp)),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 9.dp),
+            modifier = Modifier.padding(horizontal = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
         ) {
-            Text(emoji, fontSize = 12.sp)
-            Text("$count", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = fg)
-            Text(label, fontSize = 10.sp, color = fg)
+            Text(emoji, fontSize = 11.sp)
+            Text("$count", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = fg)
+            Text(label, fontSize = 9.sp, color = fg)
         }
     }
 }
