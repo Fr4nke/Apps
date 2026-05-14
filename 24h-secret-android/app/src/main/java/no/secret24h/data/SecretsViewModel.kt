@@ -9,6 +9,8 @@ import kotlinx.coroutines.launch
 data class UiState(
     val secrets: List<Secret> = emptyList(),
     val sort: Sort = Sort.Recent,
+    val moodFilter: String? = null,
+    val reactionSort: String? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
 )
@@ -20,7 +22,17 @@ class SecretsViewModel : ViewModel() {
     init { load() }
 
     fun setSort(sort: Sort) {
-        _state.value = _state.value.copy(sort = sort)
+        _state.value = _state.value.copy(sort = sort, moodFilter = null, reactionSort = null)
+        load()
+    }
+
+    fun setMoodFilter(mood: String?) {
+        _state.value = _state.value.copy(moodFilter = mood)
+        load()
+    }
+
+    fun setReactionSort(reactionSort: String?) {
+        _state.value = _state.value.copy(reactionSort = reactionSort)
         load()
     }
 
@@ -28,7 +40,12 @@ class SecretsViewModel : ViewModel() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             try {
-                val secrets = Api.getSecrets(_state.value.sort)
+                val s = _state.value
+                val secrets = Api.getSecrets(
+                    sort = s.sort,
+                    moodFilter = if (s.sort == Sort.Top) s.moodFilter else null,
+                    reactionSort = if (s.sort == Sort.Top) s.reactionSort else null,
+                )
                 _state.value = _state.value.copy(secrets = secrets, isLoading = false)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(isLoading = false, error = e.message)

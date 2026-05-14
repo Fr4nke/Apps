@@ -55,5 +55,9 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
+    implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation("androidx.compose.material:material-icons-extended")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

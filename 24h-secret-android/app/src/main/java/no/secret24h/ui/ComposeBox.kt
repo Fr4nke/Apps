@@ -53,7 +53,7 @@ fun ComposeBox(
                 Box {
                     if (text.isEmpty()) {
                         Text(
-                            "Skriv din hemmelighet... ingen ser hvem du er.",
+                            "Write your secret... no one knows who you are.",
                             color = SmTextFaint,
                             fontSize = 14.sp,
                             fontFamily = GeistFamily,
@@ -103,7 +103,7 @@ fun ComposeBox(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("🔒 anonym · 24t", fontSize = 11.sp, color = SmTextFaint, fontFamily = GeistFamily)
+            Text("🔒 anonymous · 24h", fontSize = 11.sp, color = SmTextFaint, fontFamily = GeistFamily)
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -132,7 +132,7 @@ fun ComposeBox(
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        if (isSending) "Sender..." else "Slipp den fri",
+                        if (isSending) "Sending..." else "Set it free",
                         fontSize = 12.sp,
                         fontFamily = GeistFamily,
                         color = if (canSubmit) Color.White else SmTextFaint,

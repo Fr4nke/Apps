@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import no.secret24h.data.MOOD_EMOJIS
 import no.secret24h.data.Secret
+import no.secret24h.data.UserSession
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -30,11 +31,11 @@ fun Countdown(expiresAt: String) {
             try {
                 val expiry = OffsetDateTime.parse(expiresAt).toInstant()
                 val diff = ChronoUnit.SECONDS.between(Instant.now(), expiry)
-                timeLeft = if (diff <= 0) "Utløpt" else {
+                timeLeft = if (diff <= 0) "Expired" else {
                     val h = diff / 3600
                     val m = (diff % 3600) / 60
                     val s = diff % 60
-                    "${h}t ${m}m ${s}s"
+                    "${h}h ${m}m ${s}s"
                 }
             } catch (_: Exception) {
                 timeLeft = "?"
@@ -54,9 +55,13 @@ fun SecretCard(
     reactedWild: Boolean,
     reactedDoubtful: Boolean,
     onReact: (String) -> Unit,
+    onWhisper: ((secretId: String, receiverId: String) -> Unit)? = null,
 ) {
     val rankColors = mapOf(1 to Color(0xFFFFAD45), 2 to Color(0xFFB0A8A0), 3 to Color(0xFFCD8847))
     val emotion = EMOTION_COLORS[secret.mood] ?: EMOTION_COLORS["annet"]!!
+
+    // Show whisper button if secret has a userId that is not the current user
+    val showWhisper = secret.userId != null && secret.userId != UserSession.userId
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Box(
@@ -100,10 +105,37 @@ fun SecretCard(
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    ReactionButton("🙋", "meg også", secret.reactionMeToo, reactedMeToo, SmAccent) { onReact("me_too") }
-                    ReactionButton("🤯", "sprøtt",   secret.reactionWild,    reactedWild,    Color(0xFFFF6ADB)) { onReact("wild") }
-                    ReactionButton("🤨", "tvilsomt", secret.reactionDoubtful, reactedDoubtful, Color(0xFF42F0D4)) { onReact("doubtful") }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        ReactionButton("🙋", "me too",   secret.reactionMeToo,    reactedMeToo,    SmAccent)                { onReact("me_too") }
+                        ReactionButton("🤯", "wild",     secret.reactionWild,     reactedWild,     Color(0xFFFF6ADB)) { onReact("wild") }
+                        ReactionButton("🤨", "doubtful", secret.reactionDoubtful, reactedDoubtful, Color(0xFF42F0D4)) { onReact("doubtful") }
+                    }
+
+                    if (showWhisper && onWhisper != null) {
+                        Surface(
+                            onClick = { onWhisper(secret.id, secret.userId!!) },
+                            shape = RoundedCornerShape(100.dp),
+                            color = Color.Transparent,
+                            modifier = Modifier
+                                .height(28.dp)
+                                .border(1.dp, SmBorder, RoundedCornerShape(100.dp))
+                                .background(Color(0x14FFFFFF), RoundedCornerShape(100.dp)),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 9.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Text("💬", fontSize = 12.sp)
+                                Text("Whisper", fontSize = 10.sp, color = SmTextDim)
+                            }
+                        }
+                    }
                 }
             }
         }

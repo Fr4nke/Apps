@@ -8,6 +8,7 @@ data class Secret(
     val reactionMeToo: Int,
     val reactionWild: Int,
     val reactionDoubtful: Int,
+    val userId: String? = null,
 )
 
 enum class Sort { Recent, Top }
