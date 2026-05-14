@@ -2,6 +2,10 @@ package no.secret24h.ui
 
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -62,24 +66,38 @@ fun SecretCard(
     val rankColors = mapOf(1 to Color(0xFFFFAD45), 2 to Color(0xFFB0A8A0), 3 to Color(0xFFCD8847))
     val emotion = EMOTION_COLORS[secret.mood] ?: EMOTION_COLORS["annet"]!!
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     // Show whisper button if secret has a userId that is not the current user
     val showWhisper = secret.userId != null && secret.userId != UserSession.userId
 
     val onShare = {
-        val emoji = MOOD_EMOJIS[secret.mood] ?: "🤫"
-        val shareText = buildString {
-            appendLine("🤫 \"${secret.text}\"")
-            appendLine()
-            appendLine("$emoji ${secret.mood} · disappears in 24h")
-            appendLine()
-            append("Share your own secret anonymously on 24h Secret 👇")
+        scope.launch {
+            try {
+                val file = withContext(Dispatchers.IO) {
+                    ShareImageGenerator.generate(context, secret)
+                }
+                val uri = FileProvider.getUriForFile(
+                    context, "${context.packageName}.fileprovider", file,
+                )
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/png"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(Intent.createChooser(intent, null))
+            } catch (_: Exception) {
+                // Fallback to plain text if image generation fails
+                val emoji = MOOD_EMOJIS[secret.mood] ?: "🤫"
+                val text = "🤫 \"${secret.text}\"\n\n$emoji ${secret.mood} · disappears in 24h\n\nShare your own secret anonymously 👇\nhttps://24h-secret.no"
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(Intent.createChooser(intent, null))
+            }
         }
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, shareText)
-        }
-        context.startActivity(Intent.createChooser(intent, null))
+        Unit
     }
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -215,18 +233,17 @@ fun ReactionButton(
         shape = RoundedCornerShape(100.dp),
         color = Color.Transparent,
         modifier = Modifier
-            .height(24.dp)
+            .height(22.dp)
             .border(1.dp, border, RoundedCornerShape(100.dp))
             .background(bg, RoundedCornerShape(100.dp)),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 7.dp),
+            modifier = Modifier.padding(horizontal = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(3.dp),
         ) {
-            Text(emoji, fontSize = 11.sp)
-            Text("$count", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = fg)
-            Text(label, fontSize = 9.sp, color = fg)
+            Text(emoji, fontSize = 10.sp)
+            Text("$count", fontSize = 10.sp, fontWeight = FontWeight.Medium, color = fg)
         }
     }
 }

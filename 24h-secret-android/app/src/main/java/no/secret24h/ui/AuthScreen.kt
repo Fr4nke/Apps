@@ -48,32 +48,34 @@ fun AuthScreen(
     val googleClient = remember { GoogleSignIn.getClient(context, gso) }
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                val idToken = account.idToken
-                if (idToken != null) {
-                    isLoading = true
-                    error = null
-                    scope.launch {
-                        try {
-                            val userInfo = AuthApi.signInWithGoogle(idToken)
-                            UserSession.accessToken = userInfo.accessToken
-                            UserSession.userId = userInfo.userId
-                            UserSession.email = userInfo.email
-                            isLoading = false
-                            onSuccess()
-                        } catch (e: Exception) {
-                            isLoading = false
-                            error = e.message ?: "Sign-in failed"
-                        }
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            val idToken = account.idToken
+            if (idToken != null) {
+                isLoading = true
+                error = null
+                scope.launch {
+                    try {
+                        val userInfo = AuthApi.signInWithGoogle(idToken)
+                        UserSession.accessToken = userInfo.accessToken
+                        UserSession.userId = userInfo.userId
+                        UserSession.email = userInfo.email
+                        isLoading = false
+                        onSuccess()
+                    } catch (e: Exception) {
+                        isLoading = false
+                        error = "Server error: ${e.message}"
                     }
-                } else {
-                    error = "No ID token received"
                 }
-            } catch (e: ApiException) {
-                error = "Google sign-in failed: ${e.statusCode}"
+            } else {
+                error = "No ID token — check Google Cloud OAuth setup"
+            }
+        } catch (e: ApiException) {
+            error = when (e.statusCode) {
+                12501 -> null // user cancelled — silent
+                10    -> "OAuth misconfiguration (code 10) — check client ID"
+                else  -> "Google sign-in failed (code ${e.statusCode})"
             }
         }
     }
