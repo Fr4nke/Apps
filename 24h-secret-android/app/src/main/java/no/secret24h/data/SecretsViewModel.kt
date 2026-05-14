@@ -45,10 +45,17 @@ class SecretsViewModel(app: Application) : AndroidViewModel(app) {
             _state.value = _state.value.copy(distanceKm = null, lastLocation = null)
             load()
         } else {
-            viewModelScope.launch {
-                val loc = LocationHelper.getLocation(ctx)
-                _state.value = _state.value.copy(distanceKm = km, lastLocation = loc)
+            val cached = _state.value.lastLocation
+            if (cached != null) {
+                // Reuse cached location — instant switch between distances
+                _state.value = _state.value.copy(distanceKm = km)
                 load()
+            } else {
+                viewModelScope.launch {
+                    val loc = LocationHelper.getLocation(ctx)
+                    _state.value = _state.value.copy(distanceKm = km, lastLocation = loc)
+                    load()
+                }
             }
         }
     }

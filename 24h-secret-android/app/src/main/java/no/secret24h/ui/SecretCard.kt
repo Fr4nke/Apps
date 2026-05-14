@@ -6,7 +6,6 @@ import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -147,51 +146,26 @@ fun SecretCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        LabeledReactionButton("🙋", "Me too",   secret.reactionMeToo,    reactedMeToo,    SmAccent)           { onReact("me_too") }
-                        LabeledReactionButton("🤯", "Wild",     secret.reactionWild,     reactedWild,     Color(0xFFFF6ADB)) { onReact("wild") }
-                        LabeledReactionButton("🤨", "Doubtful", secret.reactionDoubtful, reactedDoubtful, Color(0xFF42F0D4)) { onReact("doubtful") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        FlatReactionButton("🙋", secret.reactionMeToo, reactedMeToo, SmAccent)           { onReact("me_too") }
+                        FlatReactionButton("🤯", secret.reactionWild,  reactedWild,  Color(0xFFFF6ADB)) { onReact("wild") }
+                        FlatReactionButton("🤨", secret.reactionDoubtful, reactedDoubtful, Color(0xFF42F0D4)) { onReact("doubtful") }
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         if (showWhisper && onWhisper != null) {
-                            Surface(
+                            TextButton(
                                 onClick = { onWhisper(secret.id, secret.userId!!) },
-                                shape = RoundedCornerShape(100.dp),
-                                color = Color.Transparent,
-                                modifier = Modifier
-                                    .height(28.dp)
-                                    .border(1.dp, SmBorder, RoundedCornerShape(100.dp))
-                                    .background(Color(0x14FFFFFF), RoundedCornerShape(100.dp)),
+                                contentPadding = PaddingValues(0.dp),
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 9.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    Text("💬", fontSize = 12.sp)
-                                    Text("Whisper", fontSize = 10.sp, color = SmTextDim)
-                                }
+                                Text("💬 Whisper", fontSize = 10.sp, color = SmTextDim)
                             }
                         }
-
-                        Surface(
+                        TextButton(
                             onClick = onShare,
-                            shape = RoundedCornerShape(100.dp),
-                            color = Color.Transparent,
-                            modifier = Modifier
-                                .height(28.dp)
-                                .border(1.dp, SmBorder, RoundedCornerShape(100.dp))
-                                .background(Color(0x14FFFFFF), RoundedCornerShape(100.dp)),
+                            contentPadding = PaddingValues(0.dp),
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 9.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                Text("↗", fontSize = 12.sp, color = SmTextDim)
-                                Text("Share", fontSize = 10.sp, color = SmTextDim)
-                            }
+                            Text("↗ Share", fontSize = 10.sp, color = SmTextDim)
                         }
                     }
                 }
@@ -215,54 +189,25 @@ fun SecretCard(
 }
 
 @Composable
-fun LabeledReactionButton(
+fun FlatReactionButton(
     emoji: String,
-    label: String,
     count: Int,
     active: Boolean,
     activeColor: Color,
     onClick: () -> Unit,
 ) {
     val fg = if (active) activeColor else SmTextDim
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        ReactionButton(emoji, label, count, active, activeColor, onClick)
-        Text(label, fontSize = 9.sp, color = fg.copy(alpha = if (active) 0.85f else 0.5f), fontFamily = GeistFamily)
-    }
-}
-
-@Composable
-fun ReactionButton(
-    emoji: String,
-    label: String,
-    count: Int,
-    active: Boolean,
-    activeColor: Color,
-    onClick: () -> Unit,
-) {
-    val bg = if (active) activeColor.copy(alpha = 0.15f) else Color(0x14FFFFFF)
-    val fg = if (active) activeColor else SmTextDim
-    val border = if (active) activeColor.copy(alpha = 0.4f) else SmBorder
-
-    Surface(
+    TextButton(
         onClick = onClick,
         enabled = !active,
-        shape = RoundedCornerShape(100.dp),
-        color = Color.Transparent,
-        modifier = Modifier
-            .height(22.dp)
-            .border(1.dp, border, RoundedCornerShape(100.dp))
-            .background(bg, RoundedCornerShape(100.dp)),
+        contentPadding = PaddingValues(0.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
-        ) {
-            Text(emoji, fontSize = 10.sp)
-            Text("$count", fontSize = 10.sp, fontWeight = FontWeight.Medium, color = fg)
-        }
+        Text(
+            "$emoji $count",
+            fontSize = 12.sp,
+            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+            color = fg,
+            fontFamily = GeistFamily,
+        )
     }
 }
