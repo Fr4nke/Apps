@@ -145,7 +145,7 @@ object ShareImageGenerator {
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
-        canvas.drawText("anonymous · no account · disappears after 24h", SIZE / 2f, SIZE * 0.91f, tagPaint)
+        canvas.drawText("A world of secrets. Gone in 24h.", SIZE / 2f, SIZE * 0.91f, tagPaint)
 
         // CTA
         val ctaPaint = TextPaint().apply {

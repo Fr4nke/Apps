@@ -100,7 +100,7 @@ fun MainScreen(
                                 }
                             )
                             Text(
-                                "Anonymous · no account · disappears after 24 hours",
+                                "A world of secrets. Gone in 24h.",
                                 fontSize = 11.sp,
                                 color = SmTextDim,
                                 fontFamily = GeistFamily,
