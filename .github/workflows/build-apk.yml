@@ -41,7 +41,10 @@ jobs:
       - name: Restore debug keystore
         run: |
           mkdir -p ~/.android
-          printf '%s' "${{ secrets.DEBUG_KEYSTORE_B64 }}" | base64 --ignore-garbage -d > ~/.android/debug.keystore
+          printf '%s' "${{ secrets.DEBUG_KEYSTORE_B64 }}" | base64 -d > ~/.android/debug.keystore
+          echo "Keystore size: $(stat -c%s ~/.android/debug.keystore) bytes"
+          echo "Keystore SHA-1:"
+          keytool -list -v -keystore ~/.android/debug.keystore -storepass android 2>&1 | grep -i "sha1:" || echo "ERROR: keytool failed"
 
       - name: Build debug APK
         working-directory: 24h-secret-android
