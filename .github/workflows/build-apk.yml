@@ -41,10 +41,19 @@ jobs:
       - name: Restore debug keystore
         run: |
           mkdir -p ~/.android
-          printf '%s' "${{ secrets.DEBUG_KEYSTORE_B64 }}" | base64 -d > ~/.android/debug.keystore
-          echo "Keystore size: $(stat -c%s ~/.android/debug.keystore) bytes"
-          echo "Keystore SHA-1:"
-          keytool -list -v -keystore ~/.android/debug.keystore -storepass android 2>&1 | grep -i "sha1:" || echo "ERROR: keytool failed"
+          mkdir -p $HOME/.android
+          mkdir -p $ANDROID_USER_HOME 2>/dev/null || true
+          printf '%s' "${{ secrets.DEBUG_KEYSTORE_B64 }}" | base64 -d > /tmp/debug.keystore
+          # Copy to ALL possible locations
+          cp /tmp/debug.keystore ~/.android/debug.keystore
+          cp /tmp/debug.keystore $HOME/.android/debug.keystore
+          if [ -n "$ANDROID_USER_HOME" ]; then cp /tmp/debug.keystore $ANDROID_USER_HOME/debug.keystore; fi
+          echo "ANDROID_USER_HOME: $ANDROID_USER_HOME"
+          echo "HOME: $HOME"
+          echo "Files:"
+          find / -name "debug.keystore" 2>/dev/null | head -20
+          echo "Our keystore SHA-1 (should match Google Cloud):"
+          keytool -list -v -keystore /tmp/debug.keystore -storepass android 2>&1 | grep -i "sha1:"
 
       - name: Build debug APK
         working-directory: 24h-secret-android
