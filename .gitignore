@@ -22,7 +22,7 @@ node_modules/
 .DS_Store
 *.log
 
-# Tooling artifacts (kept out of repo)
-node_modules/
-package*.json
-set_secret.js
+# Tooling artifacts at repo root only (don't hide subproject package.json files)
+/package.json
+/package-lock.json
+/set_secret.js
