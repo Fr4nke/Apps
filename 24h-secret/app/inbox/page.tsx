@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 
 interface Conversation {
@@ -61,14 +62,15 @@ export default function InboxPage() {
       ) : (
         <div className="space-y-3">
           {convos.map((c) => (
-            <div
+            <Link
               key={`${c.secret_id}-${c.other_user_id}`}
-              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-2"
+              href={`/whispers/${c.secret_id}/${c.other_user_id}`}
+              className="block bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-2 hover:border-zinc-700 transition-colors"
             >
               <p className="text-zinc-500 text-xs line-clamp-1">
                 Re: <span className="text-zinc-400">{c.secret_text}</span>
               </p>
-              <p className="text-zinc-200 text-sm">{c.last_message}</p>
+              <p className="text-zinc-200 text-sm line-clamp-2">{c.last_message}</p>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-600 text-xs">
                   {new Date(c.last_message_at).toLocaleString('en', { dateStyle: 'short', timeStyle: 'short' })}
@@ -79,7 +81,7 @@ export default function InboxPage() {
                   </span>
                 )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

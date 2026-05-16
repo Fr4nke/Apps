@@ -1,4 +1,6 @@
 import { getSupabase } from '@/lib/supabase'
+import { getUserFromRequest } from '@/lib/auth-server'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -20,17 +22,24 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { secret_id, text, parent_id, user_id } = await req.json()
+  const ip = getClientIP(req)
+  if (!rateLimit(ip, 30, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
+  const { secret_id, text, parent_id } = await req.json()
   if (!secret_id) return NextResponse.json({ error: 'Missing secret_id' }, { status: 400 })
 
   if (!text || text.trim().length < 1 || text.trim().length > 500) {
     return NextResponse.json({ error: 'Comment must be 1–500 characters' }, { status: 400 })
   }
 
+  const user = await getUserFromRequest(req)
+
   const supabase = getSupabase()
   const { data, error } = await supabase
     .from('comments')
-    .insert({ secret_id, text: text.trim(), parent_id: parent_id ?? null, user_id: user_id ?? null })
+    .insert({ secret_id, text: text.trim(), parent_id: parent_id ?? null, user_id: user?.id ?? null })
     .select('id, text, created_at, parent_id, user_id')
     .single()
 

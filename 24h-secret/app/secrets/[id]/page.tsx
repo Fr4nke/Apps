@@ -190,6 +190,13 @@ export default function SecretDetailPage({ params }: { params: Promise<{ id: str
     load()
   }, [id])
 
+  async function getAuthHeaders(): Promise<Record<string, string>> {
+    const { data: { session } } = await getSupabaseBrowser().auth.getSession()
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+    return headers
+  }
+
   async function postComment(e: React.FormEvent) {
     e.preventDefault()
     if (text.trim().length < 1) return
@@ -198,8 +205,8 @@ export default function SecretDetailPage({ params }: { params: Promise<{ id: str
     try {
       const res = await fetch(`/api/comments?secret_id=${id}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret_id: id, text, user_id: currentUserId }),
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({ secret_id: id, text }),
       })
       const json = await res.json()
       if (!res.ok) { setError(json.error ?? 'Failed to post comment'); return }
@@ -219,8 +226,8 @@ export default function SecretDetailPage({ params }: { params: Promise<{ id: str
     try {
       const res = await fetch(`/api/comments?secret_id=${id}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret_id: id, text: replyText, parent_id: parentId, user_id: currentUserId }),
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({ secret_id: id, text: replyText, parent_id: parentId }),
       })
       const json = await res.json()
       if (res.ok) {

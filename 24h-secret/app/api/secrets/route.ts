@@ -1,19 +1,28 @@
 import { getSupabase } from '@/lib/supabase'
+import { getUserFromRequest } from '@/lib/auth-server'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
-  const { text, mood, user_id } = await req.json()
+  const ip = getClientIP(req)
+  if (!rateLimit(ip, 10, 60 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
+  const { text, mood } = await req.json()
 
   if (!text || text.length < 5 || text.length > 280) {
     return NextResponse.json({ error: 'Text must be between 5 and 280 characters' }, { status: 400 })
   }
 
+  const user = await getUserFromRequest(req)
+
   const supabase = getSupabase()
   const { data, error } = await supabase
     .from('secrets')
-    .insert({ text, mood: mood ?? 'other', user_id: user_id ?? null })
+    .insert({ text, mood: mood ?? 'other', user_id: user?.id ?? null })
     .select()
     .single()
 
@@ -38,7 +47,6 @@ export async function GET(req: Request) {
 
   const rows = data ?? []
 
-  // Fetch comment counts (graceful fallback if table doesn't exist yet)
   let countMap: Record<string, number> = {}
   try {
     const ids = rows.map((s) => s.id)

@@ -33,11 +33,13 @@ export default function ComposeBox({ onPublished }: Props) {
     setError('')
 
     try {
-      const { data: { user } } = await getSupabaseBrowser().auth.getUser()
+      const { data: { session } } = await getSupabaseBrowser().auth.getSession()
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
       const res = await fetch('/api/secrets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.trim(), mood, user_id: user?.id ?? null }),
+        headers,
+        body: JSON.stringify({ text: text.trim(), mood }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
