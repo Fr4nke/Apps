@@ -45,19 +45,51 @@ async function fetchStats(db: ReturnType<typeof getAdminClient>) {
     { count: commentsTotal },
     { data: reactionData },
   ] = await Promise.all([
-    db.from('secrets').select('*', { count: 'exact', head: true }).eq('is_synthetic', false),
-    db.from('secrets').select('*', { count: 'exact', head: true }).eq('is_synthetic', false).gte('created_at', ago(30)),
-    db.from('secrets').select('*', { count: 'exact', head: true }).eq('is_synthetic', false).gte('created_at', ago(7)),
-    db.from('secrets').select('*', { count: 'exact', head: true }).eq('is_synthetic', false).gte('created_at', ago(1)),
+    db.from('secrets').select('*', { count: 'exact', head: true }),
+    db.from('secrets').select('*', { count: 'exact', head: true }).gte('created_at', ago(30)),
+    db.from('secrets').select('*', { count: 'exact', head: true }).gte('created_at', ago(7)),
+    db.from('secrets').select('*', { count: 'exact', head: true }).gte('created_at', ago(1)),
     db.from('whispers').select('*', { count: 'exact', head: true }),
     db.from('whispers').select('*', { count: 'exact', head: true }).gte('created_at', ago(30)),
     db.from('whispers').select('*', { count: 'exact', head: true }).gte('created_at', ago(7)),
     db.from('whispers').select('*', { count: 'exact', head: true }).gte('created_at', ago(1)),
     db.from('comments').select('*', { count: 'exact', head: true }),
-    db.from('secrets').select('total_reactions').eq('is_synthetic', false),
+    db.from('secrets').select('total_reactions'),
   ])
 
   if (dbError) throw new Error(`Supabase feil (${dbError.code}): ${dbError.message || dbError.hint || JSON.stringify(dbError)}`)
+
+  // Synthetic split — requires synthetic_tag.sql migration; graceful fallback if missing
+  let syntheticTotal = 0
+  let realTotal = secretsTotal ?? 0
+  let realMonth = secretsMonth ?? 0
+  let realWeek = secretsWeek ?? 0
+  let realDay = secretsDay ?? 0
+  let timeRows: { created_at: string; is_synthetic: boolean | null }[] = []
+
+  try {
+    const [
+      { count: synthCount },
+      { count: rTotal },
+      { count: rMonth },
+      { count: rWeek },
+      { count: rDay },
+      { data: tRows },
+    ] = await Promise.all([
+      db.from('secrets').select('*', { count: 'exact', head: true }).eq('is_synthetic', true),
+      db.from('secrets').select('*', { count: 'exact', head: true }).eq('is_synthetic', false),
+      db.from('secrets').select('*', { count: 'exact', head: true }).eq('is_synthetic', false).gte('created_at', ago(30)),
+      db.from('secrets').select('*', { count: 'exact', head: true }).eq('is_synthetic', false).gte('created_at', ago(7)),
+      db.from('secrets').select('*', { count: 'exact', head: true }).eq('is_synthetic', false).gte('created_at', ago(1)),
+      db.from('secrets').select('created_at, is_synthetic').gte('created_at', ago(30)),
+    ])
+    syntheticTotal = synthCount ?? 0
+    realTotal = rTotal ?? 0
+    realMonth = rMonth ?? 0
+    realWeek = rWeek ?? 0
+    realDay = rDay ?? 0
+    timeRows = (tRows ?? []) as typeof timeRows
+  } catch { /* is_synthetic column not yet created — run synthetic_tag.sql */ }
 
   const totalReactions = (reactionData ?? []).reduce((s: number, r: { total_reactions: number }) => s + (r.total_reactions ?? 0), 0)
 
@@ -69,18 +101,7 @@ async function fetchStats(db: ReturnType<typeof getAdminClient>) {
   const usersWeek = users.filter(u => u.created_at >= ago(7)).length
   const usersDay = users.filter(u => u.created_at >= ago(1)).length
 
-  // Synthetic counts
-  const { count: syntheticTotal } = await db.from('secrets').select('*', { count: 'exact', head: true }).eq('is_synthetic', true)
-
-  // Time series — last 30 days
-  const { data: timeRows } = await db
-    .from('secrets')
-    .select('created_at, is_synthetic')
-    .gte('created_at', ago(30))
-  const timeSeries30 = buildTimeSeries(
-    (timeRows ?? []) as { created_at: string; is_synthetic: boolean | null }[],
-    30
-  )
+  const timeSeries30 = buildTimeSeries(timeRows, 30)
 
   // Try to get real DB stats via RPC
   let dbSizeBytes: number | null = null
@@ -97,8 +118,8 @@ async function fetchStats(db: ReturnType<typeof getAdminClient>) {
   } catch { /* function not set up yet */ }
 
   return {
-    secrets: { total: secretsTotal ?? 0, month: secretsMonth ?? 0, week: secretsWeek ?? 0, day: secretsDay ?? 0 },
-    synthetic: { total: syntheticTotal ?? 0 },
+    secrets: { total: realTotal, month: realMonth, week: realWeek, day: realDay },
+    synthetic: { total: syntheticTotal },
     whispers: { total: whispersTotal ?? 0, month: whispersMonth ?? 0, week: whispersWeek ?? 0, day: whispersDay ?? 0 },
     comments: { total: commentsTotal ?? 0 },
     users: { total: usersTotal, month: usersMonth, week: usersWeek, day: usersDay },
