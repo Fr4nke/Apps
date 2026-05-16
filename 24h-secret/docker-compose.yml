@@ -3,5 +3,7 @@ services:
     build: .
     ports:
       - "3000:3000"
+    command: npx next dev -H 0.0.0.0
     env_file:
-      - .env.local
+      - path: .env.local
+        required: false

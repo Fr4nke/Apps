@@ -3,12 +3,16 @@ services:
     build: ./24h-secret
     ports:
       - "3000:3000"
+    command: npx next dev -H 0.0.0.0
     env_file:
-      - ./24h-secret/.env.local
+      - path: ./24h-secret/.env.local
+        required: false
 
   admin:
     build: ./24h-secret-admin
     ports:
       - "3001:3001"
+    command: npx next dev -p 3001 -H 0.0.0.0
     env_file:
-      - ./24h-secret-admin/.env.local
+      - path: ./24h-secret-admin/.env.local
+        required: false
