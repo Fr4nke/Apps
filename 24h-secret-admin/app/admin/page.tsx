@@ -7,6 +7,13 @@ type Tab = 'stats' | 'secrets' | 'whispers'
 const now = new Date()
 const ago = (days: number) => new Date(now.getTime() - days * 86400000).toISOString()
 
+const FREE_TIER = {
+  db_mb: 500,
+  connections: 60,
+  api_calls_month: 500_000,
+  secrets_est_limit: 1_000_000,
+}
+
 async function fetchStats(db: ReturnType<typeof getAdminClient>) {
   const [
     { count: secretsTotal, error: dbError },
@@ -17,6 +24,7 @@ async function fetchStats(db: ReturnType<typeof getAdminClient>) {
     { count: whispersMonth },
     { count: whispersWeek },
     { count: whispersDay },
+    { count: commentsTotal },
     { data: reactionData },
   ] = await Promise.all([
     db.from('secrets').select('*', { count: 'exact', head: true }),
@@ -27,6 +35,7 @@ async function fetchStats(db: ReturnType<typeof getAdminClient>) {
     db.from('whispers').select('*', { count: 'exact', head: true }).gte('created_at', ago(30)),
     db.from('whispers').select('*', { count: 'exact', head: true }).gte('created_at', ago(7)),
     db.from('whispers').select('*', { count: 'exact', head: true }).gte('created_at', ago(1)),
+    db.from('comments').select('*', { count: 'exact', head: true }),
     db.from('secrets').select('total_reactions'),
   ])
 
@@ -34,23 +43,33 @@ async function fetchStats(db: ReturnType<typeof getAdminClient>) {
 
   const totalReactions = (reactionData ?? []).reduce((s: number, r: { total_reactions: number }) => s + (r.total_reactions ?? 0), 0)
 
-  // Fetch user counts via auth admin API
   const { data: usersData } = await db.auth.admin.listUsers({ perPage: 1 })
   const usersTotal = usersData?.total ?? 0
-
-  // Users by created_at — need to page through all users to filter by date
-  // We approximate with a secondary query for recent users
   const { data: allUsers } = await db.auth.admin.listUsers({ perPage: 1000 })
   const users = allUsers?.users ?? []
   const usersMonth = users.filter(u => u.created_at >= ago(30)).length
   const usersWeek = users.filter(u => u.created_at >= ago(7)).length
   const usersDay = users.filter(u => u.created_at >= ago(1)).length
 
+  // Try to get real DB stats via RPC (requires db_stats.sql to be run first)
+  let dbSizeBytes: number | null = null
+  let activeConnections: number | null = null
+  try {
+    const { data } = await db.rpc('get_db_stats')
+    if (data) {
+      dbSizeBytes = (data as { db_size_bytes: number }).db_size_bytes
+      activeConnections = (data as { active_connections: number }).active_connections
+    }
+  } catch { /* function not set up yet */ }
+
   return {
     secrets: { total: secretsTotal ?? 0, month: secretsMonth ?? 0, week: secretsWeek ?? 0, day: secretsDay ?? 0 },
     whispers: { total: whispersTotal ?? 0, month: whispersMonth ?? 0, week: whispersWeek ?? 0, day: whispersDay ?? 0 },
+    comments: { total: commentsTotal ?? 0 },
     users: { total: usersTotal, month: usersMonth, week: usersWeek, day: usersDay },
     totalReactions,
+    dbSizeBytes,
+    activeConnections,
   }
 }
 
@@ -144,6 +163,52 @@ export default async function AdminPage({
         {/* ── Stats ── */}
         {tab === 'stats' && stats && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+
+            {/* Database health */}
+            <div>
+              <h2 style={{ margin: '0 0 12px', fontSize: 12, color: '#9a7070', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 500 }}>
+                🗄️ Supabase Free Tier
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, background: '#1a0a0d', border: '1px solid rgba(255,232,220,0.08)', borderRadius: 12, padding: '18px 20px' }}>
+                {stats.dbSizeBytes !== null ? (
+                  <DbBar
+                    label="Databasestørrelse"
+                    value={Math.round(stats.dbSizeBytes / 1024 / 1024)}
+                    limit={FREE_TIER.db_mb}
+                    unit="MB"
+                    warn="Oppgrader til Supabase Pro ($25/mnd) for å fjerne grensen"
+                  />
+                ) : (
+                  <div style={{ fontSize: 12, color: '#9a7070' }}>
+                    ⚠️ Databasestørrelse ikke tilgjengelig — kjør <code style={{ color: '#FF7A4D' }}>db_stats.sql</code> i Supabase SQL Editor for å aktivere
+                  </div>
+                )}
+                {stats.activeConnections !== null && (
+                  <DbBar
+                    label="Tilkoblinger"
+                    value={stats.activeConnections}
+                    limit={FREE_TIER.connections}
+                    unit=""
+                    warn="Nær maks — vurder connection pooling eller Pro-plan"
+                  />
+                )}
+                <DbBar
+                  label="Hemmeligheter (est. mot 500 MB)"
+                  value={stats.secrets.total}
+                  limit={FREE_TIER.secrets_est_limit}
+                  unit=""
+                  warn="Nærmer seg estimert kapasitet på Free tier"
+                  formatValue={(v) => v.toLocaleString('no')}
+                  formatLimit={(l) => `${(l / 1_000_000).toFixed(1)}M`}
+                />
+                <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid rgba(255,232,220,0.06)', fontSize: 11, color: '#9a7070', lineHeight: 1.6 }}>
+                  <span style={{ color: '#facc15' }}>⏸</span> Free tier pauser etter <strong style={{ color: '#ffe8dc' }}>7 dager</strong> uten aktivitet — første besøk tar 20–30 sek å vekke opp.
+                  {' '}API-kall (500 000/mnd) vises i{' '}
+                  <a href="https://supabase.com/dashboard/project/jghtqgsnevtzxhscfirg/reports" target="_blank" rel="noreferrer" style={{ color: '#FF7A4D' }}>Supabase dashboard → Reports</a>.
+                </div>
+              </div>
+            </div>
+
             <StatGroup label="Users" rows={[
               ['Total', stats.users.total],
               ['Last 30 days', stats.users.month],
@@ -164,10 +229,8 @@ export default async function AdminPage({
             ]} icon="💬" />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16 }}>
               <StatCard label="Total Reactions" value={stats.totalReactions} icon="⚡" />
+              <StatCard label="Comments" value={stats.comments.total} icon="🗨️" />
             </div>
-            <p style={{ color: '#9a7070', fontSize: 12, margin: 0 }}>
-              ℹ️ Premium users og shares er ikke implementert ennå — kan legges til i databasen.
-            </p>
           </div>
         )}
 
@@ -261,6 +324,39 @@ function StatCard({ label, value, icon }: { label: string; value: number; icon: 
     }}>
       <div style={{ fontSize: 26, fontWeight: 700, color: '#FF7A4D' }}>{value.toLocaleString()}</div>
       <div style={{ fontSize: 12, color: '#9a7070', marginTop: 4 }}>{icon} {label}</div>
+    </div>
+  )
+}
+
+function DbBar({
+  label, value, limit, unit, warn, formatValue, formatLimit,
+}: {
+  label: string
+  value: number
+  limit: number
+  unit: string
+  warn: string
+  formatValue?: (v: number) => string
+  formatLimit?: (l: number) => string
+}) {
+  const pct = Math.min(100, Math.round((value / limit) * 100))
+  const color = pct >= 90 ? '#f87171' : pct >= 70 ? '#facc15' : '#4ade80'
+  const fv = formatValue ?? ((v) => `${v.toLocaleString('no')}${unit ? ' ' + unit : ''}`)
+  const fl = formatLimit ?? ((l) => `${l.toLocaleString('no')}${unit ? ' ' + unit : ''}`)
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 12 }}>
+        <span style={{ color: '#ffe8dc' }}>{label}</span>
+        <span style={{ color, fontWeight: 600 }}>{fv(value)} / {fl(limit)} ({pct}%)</span>
+      </div>
+      <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 100, height: 6, overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 100, transition: 'width 0.3s' }} />
+      </div>
+      {pct >= 70 && (
+        <div style={{ marginTop: 4, fontSize: 11, color: pct >= 90 ? '#f87171' : '#facc15' }}>
+          {pct >= 90 ? '🚨' : '⚠️'} {warn}
+        </div>
+      )}
     </div>
   )
 }
