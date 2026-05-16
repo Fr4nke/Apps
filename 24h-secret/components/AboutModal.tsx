@@ -27,11 +27,11 @@ export default function AboutModal({ onClose }: Props) {
         className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden"
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-zinc-800">
-          <h2 className="text-base font-semibold text-zinc-100">Om 24h Secret</h2>
+          <h2 className="text-base font-semibold text-zinc-100">About 24h Secret</h2>
           <button
             onClick={onClose}
             className="text-zinc-500 hover:text-zinc-200 transition-colors text-lg leading-none"
-            aria-label="Lukk"
+            aria-label="Close"
           >
             ✕
           </button>
@@ -39,42 +39,42 @@ export default function AboutModal({ onClose }: Props) {
 
         <div className="px-5 py-4 space-y-4 text-sm text-zinc-400 max-h-[70vh] overflow-y-auto">
           <p className="text-zinc-200">
-            Del noe du aldri har turt å si høyt. Anonymt. Ingen spor. Borte etter 24 timer.
+            Share something you've never dared to say out loud. Anonymously. No trace. Gone in 24 hours.
           </p>
 
-          <Section title="Slik fungerer det">
-            <Item>Skriv en hemmelighet — ingen konto nødvendig</Item>
-            <Item>Velg et mood som passer det du føler</Item>
-            <Item>Den forsvinner automatisk etter 24 timer</Item>
+          <Section title="How it works">
+            <Item>Write a secret — no account needed</Item>
+            <Item>Pick a mood that fits how you feel</Item>
+            <Item>It disappears automatically after 24 hours</Item>
           </Section>
 
-          <Section title="Reaksjoner">
-            <Item>🙋 <strong className="text-zinc-300">Meg også</strong> — du kjenner deg igjen</Item>
-            <Item>🤯 <strong className="text-zinc-300">Vill</strong> — du er overrasket</Item>
-            <Item>🤨 <strong className="text-zinc-300">Tvilsom</strong> — du tror ikke helt på det</Item>
-            <Item>Du kan trekke tilbake en reaksjon ved å trykke igjen</Item>
+          <Section title="Reactions">
+            <Item>🙋 <strong className="text-zinc-300">Me Too</strong> — you relate</Item>
+            <Item>🤯 <strong className="text-zinc-300">Wild</strong> — you're surprised</Item>
+            <Item>🤨 <strong className="text-zinc-300">Doubtful</strong> — you're not buying it</Item>
+            <Item>Tap again to undo a reaction</Item>
           </Section>
 
-          <Section title="Kommentarer">
-            <Item>Svar på hemmeligheter — også anonymt</Item>
-            <Item>Du kan svare direkte på en kommentar i tråder</Item>
-            <Item>Kommentarer forsvinner når hemmeligheten utløper</Item>
+          <Section title="Comments">
+            <Item>Reply to secrets — also anonymously</Item>
+            <Item>Reply directly to a comment in threads</Item>
+            <Item>Comments disappear when the secret expires</Item>
           </Section>
 
           <Section title="Whispers">
-            <Item>Logg inn for å sende private meldinger til eieren av en hemmelighet</Item>
-            <Item>Kun synlig for deg og mottakeren</Item>
-            <Item>Finn dem i innboksen din</Item>
+            <Item>Sign in to send private messages to the owner of a secret</Item>
+            <Item>Only visible to you and the recipient</Item>
+            <Item>Find them in your inbox</Item>
           </Section>
 
-          <Section title="Personvern">
-            <Item>Ingen hemmeligheter knyttes til navn eller e-post uten innlogging</Item>
-            <Item>Innloggede brukere vises kun som et anonymt ID (#abc123)</Item>
-            <Item>Vi lagrer ikke IP-adresser</Item>
+          <Section title="Privacy">
+            <Item>Secrets posted without an account are fully anonymous</Item>
+            <Item>Signed-in users appear only as an anonymous ID (#abc123)</Item>
+            <Item>We do not store IP addresses</Item>
           </Section>
 
           <p className="text-zinc-600 text-xs pt-1">
-            24h Secret · Alt forsvinner. Ingenting varer.
+            24h Secret · Everything fades. Nothing lasts.
           </p>
         </div>
       </div>
