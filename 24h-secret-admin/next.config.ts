@@ -1,8 +1,3 @@
 import type { NextConfig } from 'next'
-const nextConfig: NextConfig = {
-  watchOptions: {
-    usePolling: true,
-    pollIntervalMs: 1000,
-  },
-}
+const nextConfig: NextConfig = {}
 export default nextConfig
