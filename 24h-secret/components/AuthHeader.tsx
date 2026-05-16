@@ -131,16 +131,30 @@ export default function AuthHeader() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [showSignIn, setShowSignIn] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const router = useRouter()
+
+  async function fetchUnread(userId: string) {
+    const supabase = getSupabaseBrowser()
+    const { count } = await supabase
+      .from('whispers')
+      .select('*', { count: 'exact', head: true })
+      .eq('receiver_id', userId)
+      .is('read_at', null)
+    setUnreadCount(count ?? 0)
+  }
 
   useEffect(() => {
     const supabase = getSupabaseBrowser()
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
       setLoading(false)
+      if (data.user) fetchUnread(data.user.id)
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null)
+      if (session?.user) fetchUnread(session.user.id)
+      else setUnreadCount(0)
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -169,8 +183,13 @@ export default function AuthHeader() {
         <button onClick={() => router.push('/me')} title="My secrets" className={`${btnClass} text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800`}>
           <PersonIcon />
         </button>
-        <button onClick={() => router.push('/inbox')} title="Inbox" className={`${btnClass} text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800`}>
+        <button onClick={() => router.push('/inbox')} title="Inbox" className={`${btnClass} relative text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800`}>
           <InboxIcon />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-violet-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </button>
         <button onClick={signOut} title="Sign out" className={`${btnClass} text-zinc-600 hover:text-red-400 hover:bg-zinc-800`}>
           <SignOutIcon />
