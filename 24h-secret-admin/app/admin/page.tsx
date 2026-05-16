@@ -137,10 +137,28 @@ export default async function AdminPage({
   searchParams: Promise<{ tab?: string }>
 }) {
   const { tab = 'stats' } = await searchParams as { tab?: Tab }
-  const db = getAdminClient()
 
+  let db: ReturnType<typeof getAdminClient>
+  try {
+    db = getAdminClient()
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return (
+      <div style={{ padding: 32, color: '#f87171', fontFamily: 'monospace', fontSize: 13 }}>
+        <strong style={{ fontFamily: 'sans-serif', display: 'block', marginBottom: 8 }}>Admin init error:</strong>
+        {msg}
+      </div>
+    )
+  }
+
+  let statsError: string | null = null
   const [stats, secretsResult, whispersResult, usersListResult] = await Promise.all([
-    tab === 'stats' ? fetchStats(db) : null,
+    tab === 'stats'
+      ? fetchStats(db).catch((e: unknown) => {
+          statsError = e instanceof Error ? e.message : String(e)
+          return null
+        })
+      : null,
     tab === 'secrets'
       ? db.from('secrets')
           .select('id,text,mood,expires_at,reaction_me_too,reaction_wild,reaction_doubtful,total_reactions,user_id,created_at')
@@ -217,6 +235,14 @@ export default async function AdminPage({
 
       {/* Content */}
       <main style={{ padding: 24 }}>
+
+        {/* ── Stats error ── */}
+        {tab === 'stats' && statsError && (
+          <div style={{ background: '#2a0a0a', border: '1px solid #f87171', borderRadius: 10, padding: '16px 20px', color: '#f87171', fontSize: 13, fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+            <strong style={{ display: 'block', marginBottom: 8, fontFamily: 'sans-serif' }}>Error loading stats:</strong>
+            {statsError}
+          </div>
+        )}
 
         {/* ── Stats ── */}
         {tab === 'stats' && stats && (
