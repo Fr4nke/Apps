@@ -37,9 +37,10 @@ export default function MePage() {
         .eq('user_id', data.user.id)
         .order('created_at', { ascending: false })
 
-      const secretRows = rows ?? []
+      type DbSecret = Omit<MySecret, 'comment_count'>
+      const secretRows = (rows ?? []) as DbSecret[]
 
-      let countMap: Record<string, number> = {}
+      const countMap: Record<string, number> = {}
       if (secretRows.length > 0) {
         const ids = secretRows.map((s) => s.id)
         const { data: counts } = await supabase
@@ -47,13 +48,13 @@ export default function MePage() {
           .select('secret_id')
           .in('secret_id', ids)
         if (counts) {
-          for (const c of counts) {
+          for (const c of counts as { secret_id: string }[]) {
             countMap[c.secret_id] = (countMap[c.secret_id] || 0) + 1
           }
         }
       }
 
-      setSecrets(secretRows.map((s) => ({ ...s, comment_count: countMap[s.id] || 0 })) as MySecret[])
+      setSecrets(secretRows.map((s) => ({ ...s, comment_count: countMap[s.id] || 0 })))
       setLoading(false)
     })
   }, [])
