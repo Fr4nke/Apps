@@ -26,7 +26,7 @@ export default function InboxPage() {
       if (!data.user) { setAuthed(false); setLoading(false); return }
       setAuthed(true)
       const { data: rows } = await supabase.rpc('get_whisper_conversations')
-      setConvos((rows as Conversation[]) ?? [])
+      setConvos((rows as unknown as Conversation[] | null) ?? [])
       setLoading(false)
     })
   }, [])
