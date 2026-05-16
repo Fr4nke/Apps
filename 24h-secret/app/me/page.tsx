@@ -22,6 +22,7 @@ export default function MePage() {
   const [loading, setLoading] = useState(true)
   const [authed, setAuthed] = useState<boolean | null>(null)
   const [republishing, setRepublishing] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -38,7 +39,6 @@ export default function MePage() {
 
       const secretRows = rows ?? []
 
-      // Fetch comment counts
       let countMap: Record<string, number> = {}
       if (secretRows.length > 0) {
         const ids = secretRows.map((s) => s.id)
@@ -63,11 +63,19 @@ export default function MePage() {
     setRepublishing(id)
     const supabase = getSupabaseBrowser()
     await supabase.rpc('republish_secret', { p_secret_id: id })
-    const now = new Date()
-    setSecrets((prev) => prev.map((s) =>
-      s.id === id ? { ...s, expires_at: new Date(now.getTime() + 86_400_000).toISOString() } : s
-    ))
+    const newExpiry = new Date(Date.now() + 86_400_000).toISOString()
+    setSecrets((prev) => prev.map((s) => s.id === id ? { ...s, expires_at: newExpiry } : s))
     setRepublishing(null)
+  }
+
+  async function deleteSecret(e: React.MouseEvent, id: string) {
+    e.preventDefault()
+    if (!confirm('Delete this secret? This cannot be undone.')) return
+    setDeleting(id)
+    const supabase = getSupabaseBrowser()
+    await supabase.from('secrets').delete().eq('id', id)
+    setSecrets((prev) => prev.filter((s) => s.id !== id))
+    setDeleting(null)
   }
 
   if (loading) {
@@ -89,8 +97,52 @@ export default function MePage() {
     )
   }
 
+  const now = new Date()
+  const active = secrets.filter((s) => new Date(s.expires_at) >= now)
+  const dead = secrets.filter((s) => new Date(s.expires_at) < now)
+
+  function SecretCard({ s, expired }: { s: MySecret; expired: boolean }) {
+    return (
+      <div key={s.id} className={`relative bg-zinc-900 border rounded-2xl p-4 space-y-3 hover:border-zinc-700 transition-colors ${expired ? 'border-zinc-800/50 opacity-70' : 'border-zinc-800'}`}>
+        <Link href={`/secrets/${s.id}`} className="absolute inset-0 rounded-2xl z-0" aria-label="View secret" />
+
+        <Link href={`/secrets/${s.id}`} className="relative z-10 block text-zinc-100 text-sm leading-relaxed hover:text-zinc-200 transition-colors">
+          {s.text}
+        </Link>
+
+        <div className="relative z-10 flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-3 text-xs text-zinc-600 flex-wrap">
+            <span className="capitalize">{s.mood}</span>
+            {!expired && (
+              <span>Expires {new Date(s.expires_at).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}</span>
+            )}
+            <span>🙋{s.reaction_me_too} 🤯{s.reaction_wild} 🤨{s.reaction_doubtful}</span>
+            {s.comment_count > 0 && <span>💬 {s.comment_count}</span>}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => republish(e, s.id)}
+              disabled={republishing === s.id}
+              className="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition-colors disabled:opacity-40"
+            >
+              {republishing === s.id ? '...' : expired ? 'Revive' : 'Extend 24h'}
+            </button>
+            <button
+              onClick={(e) => deleteSecret(e, s.id)}
+              disabled={deleting === s.id}
+              className="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-red-900/60 text-zinc-500 hover:text-red-400 text-xs transition-colors disabled:opacity-40"
+            >
+              {deleting === s.id ? '...' : 'Delete'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <main className="max-w-xl mx-auto px-4 py-8 space-y-6">
+    <main className="max-w-xl mx-auto px-4 py-8 space-y-8">
       <div className="flex items-center gap-3">
         <button onClick={() => router.push('/')} className="text-zinc-500 hover:text-zinc-300 text-sm">← Back</button>
         <h1 className="text-lg font-semibold">My Secrets</h1>
@@ -100,38 +152,24 @@ export default function MePage() {
       {secrets.length === 0 ? (
         <p className="text-center text-zinc-600 py-16">You haven&apos;t posted any secrets yet.</p>
       ) : (
-        <div className="space-y-3">
-          {secrets.map((s) => {
-            const expired = new Date(s.expires_at) < new Date()
-            return (
-              <div key={s.id} className="relative bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3 hover:border-zinc-700 transition-colors">
-                <Link href={`/secrets/${s.id}`} className="absolute inset-0 rounded-2xl z-0" aria-label="View secret" />
+        <>
+          {active.length > 0 && (
+            <div className="space-y-3">
+              {active.map((s) => <SecretCard key={s.id} s={s} expired={false} />)}
+            </div>
+          )}
 
-                <Link href={`/secrets/${s.id}`} className="relative z-10 block text-zinc-100 text-sm leading-relaxed hover:text-zinc-200 transition-colors">
-                  {s.text}
-                </Link>
-
-                <div className="relative z-10 flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-3 text-xs text-zinc-600">
-                    <span className="capitalize">{s.mood}</span>
-                    <span>{expired ? <span className="text-red-500">Expired</span> : `Expires ${new Date(s.expires_at).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}`}</span>
-                    <span>🙋{s.reaction_me_too} 🤯{s.reaction_wild} 🤨{s.reaction_doubtful}</span>
-                    {s.comment_count > 0 && (
-                      <span className="text-zinc-500">💬 {s.comment_count}</span>
-                    )}
-                  </div>
-                  <button
-                    onClick={(e) => republish(e, s.id)}
-                    disabled={republishing === s.id}
-                    className="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition-colors disabled:opacity-40"
-                  >
-                    {republishing === s.id ? '...' : expired ? 'Republish' : 'Extend 24h'}
-                  </button>
-                </div>
+          {dead.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-zinc-500">Dead Secrets</span>
+                <div className="flex-1 h-px bg-zinc-800" />
+                <span className="text-xs text-zinc-700">{dead.length}</span>
               </div>
-            )
-          })}
-        </div>
+              {dead.map((s) => <SecretCard key={s.id} s={s} expired={true} />)}
+            </div>
+          )}
+        </>
       )}
     </main>
   )
