@@ -1,3 +1,19 @@
+# Apps repo (Fr4nke/24HS)
+
+This repo holds **multiple sibling projects** for the "24h Secret" product. Pick the right one before editing:
+
+| Folder | What | Stack | Read its own CLAUDE.md? |
+|---|---|---|---|
+| **`24h-secret-android/`** | Android client | Kotlin + Jetpack Compose | this file covers it |
+| **`24h-secret/`** | Web client | Next.js 16 + React 19 + Tailwind v4 | yes — see `24h-secret/AGENTS.md` |
+| `24h Secret/` | empty (legacy folder, can delete) | — | — |
+
+Both clients hit the **same Supabase backend** (project `jghtqgsnevtzxhscfirg`). Schema, RLS, RPCs, and OAuth config below apply to both.
+
+The `.github/workflows/build-apk.yml` only builds the Android APK — the Next.js app is deployed separately (check `24h-secret/` for deployment config).
+
+---
+
 # 24h Secret — Android app
 
 Anonymous-confession app. Users post short "secrets" that disappear after 24 hours. Reactions (🙋 Me Too, 🤯 Wild, 🤨 Doubtful), geo-filtering, optional Google Sign-In for private "whispers" between users.
@@ -13,6 +29,7 @@ Anonymous-confession app. Users post short "secrets" that disappear after 24 hou
 
 ```
 Apps/                                # this repo (origin: github.com/Fr4nke/24HS)
+├── 24h-secret/                      # Next.js web client (its own CLAUDE.md/AGENTS.md)
 ├── 24h-secret-android/              # Android project
 │   ├── app/
 │   │   ├── build.gradle.kts         # explicit debug signingConfig → ~/.android/debug.keystore
